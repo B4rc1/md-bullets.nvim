@@ -28,7 +28,7 @@ Press `<CR>` again
   |
 ```
 
-### continue cition and infer nesting
+### continue citation and infer nesting
 This is mainly useful for nested obsidian [callouts](https://help.obsidian.md/How+to/Use+callouts)
 ```
 > > some text|
