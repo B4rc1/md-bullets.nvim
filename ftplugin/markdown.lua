@@ -1,3 +1,5 @@
+local citation_regex = vim.regex([[^\s*\(> \)\+]])
+
 local auto_list = function ()
   local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
   local preceding_line = vim.api.nvim_buf_get_lines(0, row - 2, row - 1, true)
@@ -23,7 +25,6 @@ local auto_list = function ()
   -- > some text
   -- > > aaa
 
-  local citation_regex = vim.regex([[^\s*\(> \)\+]])
   local citation_start, citation_end = citation_regex:match_str(preceding_line[1])
 
   if citation_start and citation_end then
