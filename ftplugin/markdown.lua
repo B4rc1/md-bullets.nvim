@@ -1,5 +1,36 @@
 local citation_regex = vim.regex([[^\s*\(> \)\+]])
 
+
+local function handle_lists (line, row, citation_start, citation_end)
+  -- NOTE: - is a special character in lua string matching so it needs to be escaped
+  local citation_markers
+  local is_citation = false
+
+  if citation_end then
+    is_citation = true
+    citation_markers = line:sub(citation_start, citation_end)
+    local after_citation = line:sub(citation_end+1, -1)
+    line = after_citation
+  end
+
+  if line:match("^%s*%-%s+.+") then
+    -- continue "-" list
+    local whitespace = line:match("^(%s*)%-%s+.+")
+
+    local output = whitespace .. "- "
+    if is_citation then
+      output = citation_markers .. output
+    end
+    vim.api.nvim_set_current_line(output)
+  elseif line:match("^%s-%-%s$") and not is_citation then
+    -- end "-" list
+    local whitespace = line:match("^(%s*)%-.*")
+
+    vim.api.nvim_buf_set_lines(0, row - 2, row, true, { whitespace .. "  " })
+    vim.api.nvim_win_set_cursor(0, {row - 1, 0})
+  end
+end
+
 local auto_list = function ()
   local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
   local preceding_line = vim.api.nvim_buf_get_lines(0, row - 2, row - 1, true)
@@ -8,18 +39,6 @@ local auto_list = function ()
     return
   end
 
-  -- NOTE: - is a special character in lua string matching so it needs to be escaped
-  if preceding_line[1]:match("^%s*%-%s+.+") then
-    -- continue "-" list
-    local whitespace = preceding_line[1]:match("^(%s*)%-%s+.+")
-    vim.api.nvim_set_current_line(whitespace .. "- ")
-  elseif preceding_line[1]:match("^%s-%-%s$") then
-    -- end "-" list
-    local whitespace = preceding_line[1]:match("^(%s*)%-.*")
-
-    vim.api.nvim_buf_set_lines(0, row - 2, row, true, { whitespace .. "  " })
-    vim.api.nvim_win_set_cursor(0, {row - 1, 0})
-  end
 
   -- Citation markers like:
   -- > some text
@@ -54,6 +73,8 @@ local auto_list = function ()
       end
     end
   end
+
+  handle_lists(preceding_line[1], row, citation_start, citation_end)
 end
 
 vim.keymap.set("i", "<CR>", function()
